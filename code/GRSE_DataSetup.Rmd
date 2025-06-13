@@ -1,0 +1,340 @@
+---
+title: "GRSE tracking data setup"
+author: "Luis Huckstadt"
+date: "2025-06-09"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, Load libraries and setup}
+library(aniMotum)
+library(tidyverse)
+library(readxl)
+library(rnaturalearth)
+library(availability)
+
+deploy_tbl <- read_excel('../data/GESE Deployments 2024-2025.xlsx')|>
+  janitor::clean_names() |>
+  mutate(deployid = name) 
+saveRDS(deploy_tbl,file = here::here('data/deploy_tbl.rds'))
+
+
+# Plot tracks
+## simple helper to plot tracks
+plotTracks <- function(..., pal = cpal) {
+  require(maptools)
+  data(wrld_simpl)
+  trks <- list(...)
+  xlim <- do.call(range, lapply(trks, function(trk) trk[, 1]))
+  ylim <- do.call(range, lapply(trks, function(trk) trk[, 2]))
+  plot(xlim, ylim, type = "n", xlim = xlim, ylim = ylim, xlab = "longitude", ylab = "latitude")
+  for (k in seq(from = floor((min(xlim)+180)/360), to = floor((max(xlim)+180)/360), by = 1))
+      plot(elide(wrld_simpl, shift = c(k*360, 0)), col = "grey80", border = "grey80",
+           add = TRUE, xlim = xlim, ylim = ylim)
+  for(k in seq_along(trks)) lines(trks[[k]], col = pal[k])
+}
+
+```
+Get the data from the early 2000s ready to run aniMotum
+```{r, Format data from early 2000s}
+
+tr <- read.csv('../data/raw_tracks.csv')
+tr <- na.omit(tr)
+colnames(tr) <- c("id","date","lat","lon","lc")
+ 
+
+```
+Create the plots of the raw data
+
+```{r, Plot the raw data}
+# Get the basemap data for Antarctica
+bg <- ne_countries(scale = "large", country = 'united kingdom', returnclass = "sf")
+
+
+p = ggplot()+
+
+  # Sets the basemap
+  geom_sf(data = bg)+
+  coord_sf(xlim = range(tr$lon, na.rm = TRUE),
+           ylim = range(tr$lat, na.rm = TRUE),
+           expand = FALSE)+
+
+  # Plots the tracks as lines and points, using the same colours for each individual
+  geom_path(data = tr,
+            aes(x=lon,y=lat,group=id,color=id),
+            alpha = 1.2)+
+  geom_point(data = tr,
+             aes(x=lon,y=lat,group=id,fill=id),
+             alpha = 0.7, shape=21, size = 2)
+p <- p + ggtitle('Raw tracks')
+p # Outputs the map we just created
+
+# Save the pdf
+pdf("../figures/GRSErawtracks.pdf")
+p
+dev.off()
+```
+
+Fit the SSM
+
+```{r, Run aniMotum}
+# Fit a SSM using a Movement Persistence model
+fit.1 <- fit_ssm(tr,
+                 vmax= 4,
+                 model = "mp", # Use the movement persistence model
+                 time.step = 2, # Get a location every 3 hours
+                 control = ssm_control(verbose = 0))
+
+fit.1.1 <- route_path(fit.1, what = "predicted")
+
+# Extract the data for each one of the fitted models
+out.1 <- grab(fit.1.1, what = "rerouted", as_sf = FALSE)
+
+write.csv(out.1, '../results/GRSEtracks_aniMotum.csv')
+
+
+```
+
+Create the map with the tracks corrected
+
+```{r}
+
+m3 = ggplot()+
+
+  # Sets the basemap
+  geom_sf(data = bg)+
+  coord_sf(xlim = range(out.1$lon, na.rm = TRUE),
+           ylim = range(out.1$lat, na.rm = TRUE),
+           expand = FALSE)+
+
+  # Plots the tracks as lines and points, using the same colours for each individual
+  geom_path(data = out.1,
+            aes(x=lon,y=lat,group=id,color=id),
+            alpha = 1.2)+
+  geom_point(data = out.1,
+             aes(x=lon,y=lat,group=id,fill=id),
+             alpha = 0.7, shape=21, size = 2)
+
+m3 <- m3 + ggtitle('Fit using a Movement Persistence model') #
+
+m3
+
+# Save the pdf
+pdf("../figures/GESE_filteredtracks.pdf")
+m3
+dev.off()
+
+```
+```{r}
+library(move)
+
+# Make sure that the data are sorted by animal ID and in the correct chronological order 
+# Using out.3 as that's the output from the mp model to create a move object
+
+move.grse <- move(x=out.1$lon, 
+                  y=out.1$lat,
+                  time=out.1$date,
+                  proj=CRS("+proj=longlat +ellps=WGS84 +datum=WGS84"), 
+                  animal=out.1$id) 
+
+
+# Plot the data to check we loaded the correct data
+plot(move.grse, xlab="Longitude", ylab="Latitude", type="l", pch=16, lwd=0.5)
+
+
+# If we wanted to check that the interpolation is every 3 hours, as we did when running the SSM, we can check as follows
+steps.cese <-timeLag(move.grse, units="hours")
+
+
+# Now, the next step is to calculate the distance between locations. Because the units are in degrees (lat, lon), the package move returns the distance in meters
+dist.grse <- distance(move.grse)
+
+
+```
+
+Now that we have calculated some basic track metrics for the grey seal data, let's analyse the data
+
+```{r}
+# Calculate the mean step distance in meters. As these data are interpolated, then step length is giving us transit rate in km/hours
+sapply(dist.grse, mean)/2000
+
+```
+To compare with the transit rate calculated by the package *move*, we can estimate the speed and mean
+
+```{r}
+
+speed.grse <- speed(move.grse) # Speed (or transit rate) in m/s
+
+sapply(speed.grse, mean) # # Calculate the mean speed in meters/second
+```
+
+Now that we have estimated the transit rate in two different ways, we can compare them.
+
+
+Another variable that the package *move* allows us to estimate is the heading (also known as azimuth or direction of travel/movement) of trajectory. North is represented by 0
+
+```{r}
+
+angle.grse <- angle(move.grse) # Calculate the heading in degrees
+
+sapply(angle.grse, median) # Calculate the median heading in degrees
+```
+
+
+We need to calculate the length of the track (total distance travelled, in km)
+
+```{r}
+
+t.dist.cese <- sapply(dist.grse, sum) # Calculates the total distance covered by each individual, in meter
+
+sapply(t.dist.cese, "/" , 1000) # Transforms the distance to km
+
+```
+Diving  data analysis
+
+```{r}
+library(wcUtils)
+
+d <- list.dirs(path = "../data/", full.names = TRUE, recursive = TRUE)
+
+
+for (j in (seq(2,length(d)))){
+  
+  counter <- j-1
+  
+ # Get the name of the seal
+  ID <- substr(d[j],9,90)
+  
+  #load the ecdf file for that seal 
+  
+  d2 <- list.files(path = paste("../data/",ID,'/', sep = ''),pattern = 'csv')
+  #
+  f.name <- str_subset(d2,'-ECDHistos.csv') #Find the  file with the ecdf for that sea;
+  
+  s.ecdf <- read_ecdf(paste('../data/',ID,'/',f.name, sep = '')) 
+  
+  if (counter == 1){
+    ECDF <- s.ecdf
+  } else {
+    ECDF <- rbind(ECDF, s.ecdf)}
+  
+  rm(s.ecdf)
+  
+  
+}
+
+ecd_data <- ECDF |> 
+  dplyr::rename(deployid = deploy_id) |> 
+  dplyr::arrange(deployid, start) |> 
+  rowwise() |> 
+  dplyr::mutate(spline_interp = list(spline_ecdf(full_ecdf, bin.width=20)),
+                depth50pct = x_pct_depth(full_ecdf,pct_tad = 0.5),
+                n_dives = if_else(all(is.na(n_dives_shallow),is.na(n_dives_deep)),
+                                  NA, mean(c(n_dives_shallow,n_dives_deep), na.rm=TRUE))
+  ) |> 
+  dplyr::select(c(deployid,start:percent_dry,shallow_ecdf, 
+                  deep_ecdf,full_ecdf,spline_interp,depth50pct, n_dives)) |> 
+  unnest(spline_interp, keep_empty = TRUE) |> 
+  group_by(deployid, start, end, kind, percent_dry) |> 
+  dplyr::arrange(deployid, start, depth_break) |> 
+  dplyr::mutate(propTAD = c(0,diff(ecd_prop)),
+                minTAD = 60*(1-0.01*percent_dry) * propTAD) |> 
+  # determine the next depth value
+  dplyr::mutate(next_depth = dplyr::lead(depth_break)) |>
+  # determine previous depth for plotting
+  dplyr::mutate(prev_depth = dplyr::lag(depth_break)) |>
+  dplyr::select(-next_depth) |>
+  # transform depths to negative values
+  dplyr::mutate(depth_break = depth_break * -1,
+                prev_depth = prev_depth * -1)
+
+ecd_data <- ecd_data |> 
+  group_by(deployid) |> 
+  arrange(start)
+
+```
+
+```{r}
+#| fig-height: 8
+#| fig-asp: 2.5
+ecd_data |> 
+  left_join(deploy_tbl, by = 'deployid') |> 
+  dplyr::filter(between(start,
+                        date_of_deployment + lubridate::hours(24),
+                        data_end)) |> 
+  dplyr::mutate(data_year = paste("Deployment Year:",lubridate::year(date_of_deployment))) |> 
+
+ggplot() +
+  geom_rect(aes(xmin = start, xmax = end,
+                ymin = 0, ymax = percent_dry/10),
+            fill = "seashell3") +
+  geom_rect(aes(xmin = start, xmax = end,
+                ymin = depth_break, ymax = prev_depth,
+                fill = propTAD),
+            color = NA) +
+  scale_fill_distiller(palette = "Reds",
+                   direction = 1, trans = "log10",
+                       guide = guide_colorbar(
+                         title = 'proportion of time submerged',
+                         title.position = 'bottom',
+                         title.hjust = 0.5,
+                         barwidth = unit(75, units = "mm"),
+                         barheight = unit(2, units = "mm"))) +
+  geom_smooth(aes(y = depth50pct*-1, x = start), se=FALSE,
+              linewidth = 0.2, na.rm=TRUE, color = "black",
+              
+              method = "gam", formula = y ~ s(x, bs = "cs", k=24)) +
+  facet_wrap(deployid ~ data_year, scales = "free_x",ncol=2) +
+  ylab("depth (meters)") +
+  labs(title = "Grey Seals - Proportion of Time at Depth",
+       subtitle = stringr::str_wrap("Each vertical bar represents 1 hour binned at 20m 
+                                    depth increments. The black line represents a 
+                                    smoothed GAM fit through the 50% depth break."),
+       caption = stringr::str_wrap("data derived from the Emperical Cummulative 
+                                   Distribution (ECD) of time at depth 
+                                   transmitted via the Argos satellite network")) +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
+
+
+
+```
+```{r}
+
+carto_blue <- rcartocolor::carto_pal(n=5,name="Bold")[3]
+#| fig-asp: 1.2
+ecd_data |> 
+  left_join(deploy_tbl, by = 'deployid') |> 
+  dplyr::filter(between(start,
+                        date_of_deployment + lubridate::hours(24),
+                        data_end),
+                depth_break < 0,
+                !is.na(depth_break)) |> 
+  dplyr::mutate(depth_break = factor(depth_break,levels = seq(0,-480,by=-20))) |> 
+  ggplot(aes(x=propTAD, y = depth_break)) +
+  # geom_boxplot(aes(group = depth_break), varwidth = TRUE,
+  #              outlier.alpha = 0.2) +
+  ggdist::stat_gradientinterval(
+    color = carto_blue, fill = carto_blue,
+    point_color = "black",
+    normalize = "groups",
+    na.rm=TRUE
+  ) +
+  scale_y_discrete(limits=rev) +
+  ylab("depth bin (lower bound)") +
+  xlab("proportion of time at depth") +
+  labs(title = "Grey Seals - Summarized Time at Depth",
+       subtitle = stringr::str_wrap("Each horizontal strip represents the distribution
+       of proportional time at depth for each 20m depth increment. Points indicate
+       the median value."),
+       caption = stringr::str_wrap("data derived from the Emperical Cummulative 
+                                   Distribution (ECD) of time at depth 
+                                   transmitted via the Argos satellite network")) +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+```
+
