@@ -1,0 +1,2 @@
+DeployID,Ptt,Instr,SW,PercentDecoded,Passes,PercentArgosLoc,MsgPerPass,DS,DI,MinPower,AvgPower,MaxPower,MinInterval,EarliestXmitTime,LatestXmitTime,XmitDays,EarliestDataTime,LatestDataTime,DataDays,ReleaseDate,ReleaseType,DeployDate
+Bug,238964,UT,,44,1363,99,2,2711,,,,,29,11:53:47 31-Mar-2025,11:00:51 30-May-2025,60,11:00:00 31-Mar-2025,06:13:34 30-May-2025,60,,,11:00:00 31-Mar-2025

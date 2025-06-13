@@ -1,0 +1,2 @@
+DeployID,Ptt,Instr,SW,PercentDecoded,Passes,PercentArgosLoc,MsgPerPass,DS,DI,MinPower,AvgPower,MaxPower,MinInterval,EarliestXmitTime,LatestXmitTime,XmitDays,EarliestDataTime,LatestDataTime,DataDays,ReleaseDate,ReleaseType,DeployDate
+Sunbeetle,225760,UT,,55,355,96,2,557,,,,,45,19:20:37 07-Nov-2024,08:02:48 04-Mar-2025,117,15:00:00 07-Nov-2024,19:47:42 14-Dec-2024,37,,,15:00:00 07-Nov-2024

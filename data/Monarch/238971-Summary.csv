@@ -1,0 +1,2 @@
+DeployID,Ptt,Instr,SW,PercentDecoded,Passes,PercentArgosLoc,MsgPerPass,DS,DI,MinPower,AvgPower,MaxPower,MinInterval,EarliestXmitTime,LatestXmitTime,XmitDays,EarliestDataTime,LatestDataTime,DataDays,ReleaseDate,ReleaseType,DeployDate
+Monarch,238971,UT,1.104r,35,65,60,2,151,,,,,45,17:26:01 07-Feb-2025,18:00:11 13-Mar-2025,34,19:43:03 07-Feb-2025,11:52:50 13-Mar-2025,34,,,

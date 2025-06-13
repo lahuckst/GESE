@@ -1,0 +1,2 @@
+DeployID,Ptt,Instr,SW,PercentDecoded,Passes,PercentArgosLoc,MsgPerPass,DS,DI,MinPower,AvgPower,MaxPower,MinInterval,EarliestXmitTime,LatestXmitTime,XmitDays,EarliestDataTime,LatestDataTime,DataDays,ReleaseDate,ReleaseType,DeployDate
+Barry-Mantis,225758,UT,,38,1452,97,2,2865,,,,,28,17:33:28 07-Feb-2025,16:35:42 25-May-2025,107,15:00:00 07-Feb-2025,13:00:00 25-May-2025,107,,,15:00:00 07-Feb-2025

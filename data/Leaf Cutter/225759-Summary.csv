@@ -1,0 +1,2 @@
+DeployID,Ptt,Instr,SW,PercentDecoded,Passes,PercentArgosLoc,MsgPerPass,DS,DI,MinPower,AvgPower,MaxPower,MinInterval,EarliestXmitTime,LatestXmitTime,XmitDays,EarliestDataTime,LatestDataTime,DataDays,ReleaseDate,ReleaseType,DeployDate
+Leaf Cutter,225759,UT,,39,835,98,2,1565,,,,,45,11:52:13 31-Mar-2025,07:46:23 07-May-2025,37,11:00:00 31-Mar-2025,06:09:58 07-May-2025,37,,,11:00:00 31-Mar-2025

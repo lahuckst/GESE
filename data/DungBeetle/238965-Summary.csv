@@ -1,0 +1,2 @@
+DeployID,Ptt,Instr,SW,PercentDecoded,Passes,PercentArgosLoc,MsgPerPass,DS,DI,MinPower,AvgPower,MaxPower,MinInterval,EarliestXmitTime,LatestXmitTime,XmitDays,EarliestDataTime,LatestDataTime,DataDays,ReleaseDate,ReleaseType,DeployDate
+Dung Beetle,238965,UT,,43,1370,97,2,2711,,,,,29,13:32:12 31-Mar-2025,06:38:11 09-Jun-2025,70,12:03:46 31-Mar-2025,14:15:40 01-Sep-2025,154,,,11:00:00 31-Mar-2025

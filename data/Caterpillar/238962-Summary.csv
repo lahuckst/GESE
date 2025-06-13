@@ -1,0 +1,2 @@
+DeployID,Ptt,Instr,SW,PercentDecoded,Passes,PercentArgosLoc,MsgPerPass,DS,DI,MinPower,AvgPower,MaxPower,MinInterval,EarliestXmitTime,LatestXmitTime,XmitDays,EarliestDataTime,LatestDataTime,DataDays,ReleaseDate,ReleaseType,DeployDate
+Caterpillar,238962,UT,,47,1261,98,2,2342,,,,,45,05:38:25 10-Jan-2025,01:55:14 24-Mar-2025,73,05:00:22 10-Jan-2025,18:22:21 23-Mar-2025,73,,,16:00:00 09-Jan-2025

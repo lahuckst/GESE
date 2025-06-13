@@ -1,0 +1,2 @@
+DeployID,Ptt,Instr,SW,PercentDecoded,Passes,PercentArgosLoc,MsgPerPass,DS,DI,MinPower,AvgPower,MaxPower,MinInterval,EarliestXmitTime,LatestXmitTime,XmitDays,EarliestDataTime,LatestDataTime,DataDays,ReleaseDate,ReleaseType,DeployDate
+Wirligig,225754,UT,,54,2363,98,2,4277,,,,,29,18:23:53 07-Feb-2025,14:25:39 05-Jun-2025,118,15:00:00 07-Feb-2025,09:50:17 05-Jun-2025,118,,,15:00:00 07-Feb-2025
